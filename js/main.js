@@ -156,6 +156,11 @@ function addLayer(x, z, width, depth, direction) {
     const layer = generateBox(x, y, z, width, depth, false);
     layer.direction = direction;
     stack.push(layer);
+
+    // The moving layer should be Kinematic, not Static
+    if (direction !== 'foundation') {
+        layer.cannonjs.type = CANNON.Body.KINEMATIC;
+    }
 }
 
 function addOverhang(x, z, width, depth) {
@@ -192,6 +197,9 @@ function placeBlock() {
     const overlap = size - overhangSize;
 
     if (overlap > 0) {
+        // Convert the placed block from Kinematic to Static
+        topLayer.cannonjs.type = CANNON.Body.STATIC;
+
         const precisionBonus = Math.floor(100 * (overlap / size));
         precisionScore += precisionBonus;
 
@@ -231,10 +239,15 @@ function placeBlock() {
 }
 
 function endGame() {
-    const topLayer = stack[stack.length - 1];
-    scene.remove(topLayer.threejs);
-    world.remove(topLayer.cannonjs);
-    stack.pop();
+    const topLayer = stack.pop();
+    overhangs.push(topLayer);
+    
+    // Convert the kinematic body to a dynamic body so it falls
+    topLayer.cannonjs.type = CANNON.Body.DYNAMIC;
+    topLayer.cannonjs.mass = 5;
+    topLayer.cannonjs.updateMassProperties();
+    topLayer.cannonjs.wakeUp(); // Wake it up to make sure physics are applied
+
     gameState = 'zoomOut';
 }
 
@@ -250,7 +263,7 @@ async function saveAsImage() {
         ctx.drawImage(renderer.domElement, 0, 0);
 
         // Add the height score
-        const height = stack.length - 1;
+        const height = stack.length;
         const scoreText = `${height.toLocaleString()}`;
         ctx.font = 'bold 48px monoidregular';
         ctx.fillStyle = '#FFFFFF';
@@ -351,7 +364,7 @@ function addEventListeners() {
 
 let speed = 0.15;
 function animation() {
-    if (!currentPalette || stack.length === 0) return;
+    if (stack.length === 0) return;
     const topLayer = stack[stack.length - 1];
 
     if (gameState === 'playing' && topLayer.direction !== 'foundation') {
