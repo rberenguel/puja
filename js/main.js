@@ -240,8 +240,32 @@ function endGame() {
 
 async function saveAsImage() {
     try {
-        const blob = await new Promise(resolve => renderer.domElement.toBlob(resolve, 'image/png'));
-        const file = new File([blob], `puja-${Date.now()}.png`, {
+        // Create a temporary canvas to draw the scene and text
+        const exportCanvas = document.createElement('canvas');
+        exportCanvas.width = renderer.domElement.width;
+        exportCanvas.height = renderer.domElement.height;
+        const ctx = exportCanvas.getContext('2d');
+        
+        // Draw the current rendered frame onto the canvas
+        ctx.drawImage(renderer.domElement, 0, 0);
+
+        // Add the height score
+        const height = stack.length - 1;
+        const scoreText = `${height.toLocaleString()}`;
+        ctx.font = 'bold 48px monoidregular';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+        ctx.shadowBlur = 5;
+        ctx.shadowOffsetX = 2;
+        ctx.shadowOffsetY = 2;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const textX = exportCanvas.width / 2;
+        const textY = exportCanvas.height - 50; // Position at the lower middle
+        ctx.fillText(scoreText, textX, textY);
+
+        const blob = await new Promise(resolve => exportCanvas.toBlob(resolve, 'image/png'));
+        const file = new File([blob], `puja-tower-${Date.now()}.png`, {
             type: "image/png",
         });
 
