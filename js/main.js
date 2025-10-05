@@ -8,7 +8,6 @@ let animationTime = 0;
 let lookAtTarget = new THREE.Vector3(0, 0, 0);
 let precisionScore = 0;
 let gameState = 'loading'; // loading, playing, zoomOut, awaitingReset
-let pressTimer;
 
 const heightScoreElement = document.getElementById('height-score');
 const precisionScoreElement = document.getElementById('precision-score');
@@ -29,7 +28,7 @@ const nihilisticMessages = [
     "Every click echoes in an empty universe.",
     "This tower is a monument to… What?",
     "There is no prize at the top.",
-"Another brick on the wall of pointlessness.",
+    "Another brick on the wall of pointlessness.",
     "Well done. You have achieved nothing of substance."
 ];
 
@@ -278,7 +277,16 @@ function endGame() {
     instructionsElement.style.display = 'block';
 }
 
+function triggerDownload(file) {
+    const link = document.createElement("a");
+    link.download = file.name;
+    link.href = URL.createObjectURL(file);
+    link.click();
+    URL.revokeObjectURL(link.href);
+}
+
 async function saveAsImage() {
+    let file;
     try {
         const exportCanvas = document.createElement('canvas');
         exportCanvas.width = renderer.domElement.width;
@@ -302,7 +310,7 @@ async function saveAsImage() {
         ctx.fillText(scoreText, textX, textY);
 
         const blob = await new Promise(resolve => exportCanvas.toBlob(resolve, 'image/png'));
-        const file = new File([blob], `puja-tower-${Date.now()}.png`, {
+        file = new File([blob], `puja-tower-${Date.now()}.png`, {
             type: "image/png",
         });
 
@@ -312,22 +320,23 @@ async function saveAsImage() {
                 title: 'Puja Tower',
             });
         } else {
-            const link = document.createElement("a");
-            link.download = file.name;
-            link.href = URL.createObjectURL(blob);
-            link.click();
-            URL.revokeObjectURL(link.href);
+            // If sharing is not supported, fall back to download
+            triggerDownload(file);
         }
     } catch (err) {
         if (err.name !== "AbortError") {
-            console.error("Share/Download failed:", err);
+            console.error("Share API failed, attempting download fallback:", err);
+            // If sharing failed unexpectedly, attempt to download the file as a fallback
+            if (file) {
+                triggerDownload(file);
+            }
         }
     }
 }
 
 
 function addEventListeners() {
-    let pressTimer;
+    let pressStartTime = 0;
     let isLongPress = false;
 
     window.addEventListener('resize', () => {
@@ -346,26 +355,35 @@ function addEventListeners() {
     });
 
     renderer.domElement.addEventListener('pointerdown', () => {
-        isLongPress = false;
-        pressTimer = window.setTimeout(function() {
-            isLongPress = true;
-            saveAsImage();
-        }, 1000);
-    });
-
-    renderer.domElement.addEventListener('pointerup', () => {
-        clearTimeout(pressTimer);
+        pressStartTime = Date.now();
+        isLongPress = false; // Reset on each new press
     });
 
     renderer.domElement.addEventListener('pointerleave', () => {
-        clearTimeout(pressTimer);
+        // Cancel the press if the pointer leaves the canvas
+        pressStartTime = 0;
+    });
+
+    renderer.domElement.addEventListener('pointerup', () => {
+        // If press was canceled, do nothing
+        if (pressStartTime === 0) return;
+
+        const pressDuration = Date.now() - pressStartTime;
+        if (pressDuration >= 1000) {
+            isLongPress = true;
+            saveAsImage();
+        }
+        // Reset for the next press
+        pressStartTime = 0;
     });
 
 
     renderer.domElement.addEventListener('click', () => {
         if (isLongPress) {
+            // This click follows a long press, so we ignore it.
             return;
         }
+
         triggerHaptic()
         if (gameState === 'awaitingReset') {
             resetGame();
@@ -406,6 +424,11 @@ function animation() {
         if (Math.abs(topLayer.threejs.position[topLayer.direction]) > 15) {
             speed *= -1;
         }
+    }
+    
+    if (gameState === 'awaitingReset') {
+        camera.position.x -= 0.00001;
+        lookAtTarget.x -= 0.00001;
     }
 
     // --- Camera Movement ---
