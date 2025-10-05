@@ -6,7 +6,7 @@ const urlsToCache = [
 	"./libs/cannon.min.js",
 	"./libs/haptic.js",
 	"./js/main.js",
-  "./media/icon.png",
+  "./media/icon.PNG",
   "./fonts/InterDisplay-Bold.woff2",
   "./fonts/InterDisplay-Italic.woff2",
   "./fonts/InterDisplay-Regular.woff2",
