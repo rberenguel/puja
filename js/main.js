@@ -43,7 +43,7 @@ const allPalettes = {
     halloween: {
         name: 'Halloween!',
         palette: {
-            background: '#222222',
+            background: '#775555',
             colors: (layer) => {
                 const colors = ['#FF7F00', '#9932CC', '#000000', '#FDFD96'];
                 return colors[layer % colors.length];
@@ -173,7 +173,8 @@ function triggerPerfectEffect(x, y, z, color) {
 
 function addLayer(x, z, width, depth, direction) {
     const y = stack.length * 2;
-    const layer = generateBox(x, y, z, width, depth, false);
+    const color = new THREE.Color(currentPalette.colors(stack.length));
+    const layer = generateBox(x, y, z, width, depth, false, color);
     layer.direction = direction;
     stack.push(layer);
 
@@ -182,9 +183,9 @@ function addLayer(x, z, width, depth, direction) {
     }
 }
 
-function addOverhang(x, z, width, depth, direction, overhangShift) {
-    const y = (stack.length - 1) * 2;
-    const overhang = generateBox(x, y, z, width, depth, true);
+function addOverhang(x, z, width, depth, direction, overhangShift, color) {
+    const y = (stack.length - 1) * 2; // Corrected Y-position
+    const overhang = generateBox(x, y, z, width, depth, true, color);
 
     const mainAxis = direction === 'x' ? new CANNON.Vec3(0, 0, 1) : new CANNON.Vec3(1, 0, 0);
     const impulse = Math.sign(overhangShift) * 0.5;
@@ -193,9 +194,8 @@ function addOverhang(x, z, width, depth, direction, overhangShift) {
     overhangs.push(overhang);
 }
 
-function generateBox(x, y, z, width, depth, falls) {
+function generateBox(x, y, z, width, depth, falls, color) {
     const geometry = new THREE.BoxGeometry(width, 2, depth);
-    const color = new THREE.Color(currentPalette.colors(stack.length));
     const material = new THREE.MeshLambertMaterial({ color });
     const mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(x, y, z);
@@ -252,7 +252,8 @@ function placeBlock() {
             const overhangShift = (overlap / 2 + overhangSize / 2) * Math.sign(delta);
             const overhangX = direction === 'x' ? topLayer.threejs.position.x + overhangShift : topLayer.threejs.position.x;
             const overhangZ = direction === 'z' ? topLayer.threejs.position.z + overhangShift : topLayer.threejs.position.z;
-            addOverhang(overhangX, overhangZ, overhangWidth, overhangDepth, direction, overhangShift);
+            const overhangColor = topLayer.threejs.material.color;
+            addOverhang(overhangX, overhangZ, overhangWidth, overhangDepth, direction, overhangShift, overhangColor);
         }
         return true;
     } else {
