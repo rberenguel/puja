@@ -11,8 +11,9 @@
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #f0f0f0;
             font-family: 'Momoid', monospace;
+            user-select: none;
+            -webkit-user-select: none;
         }
         #game-canvas {
             display: block;
@@ -27,7 +28,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            pointer-events: none; 
+            pointer-events: none;
         }
         #height-score {
             position: absolute;
@@ -61,26 +62,39 @@
             position: absolute;
             bottom: 20px;
         }
+        #special-palette-toast {
+            position: absolute;
+            top: 7rem;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            opacity: 1;
+            transition: opacity 1s ease-in-out;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        #special-palette-toast.fade-out {
+            opacity: 0;
+        }
     </style>
 </head>
 <body>
-    <!-- Game Canvas -->
     <canvas id="game-canvas"></canvas>
 
-    <!-- UI Elements -->
     <div class="ui-container">
         <div id="height-score">0</div>
         <div id="precision-score">0</div>
+        <div id="special-palette-toast" style="display: none;"></div>
         <div id="instructions">Click to start and place the block</div>
     </div>
 
-    <!-- Libraries -->
     <script src="./libs/three.min.js"></script>
     <script src="./libs/cannon.min.js"></script>
 
     <script type="module" src="./js/main.js">
         // --- Game Setup ---
-        
+
     </script>
 		    <script>
       if ("serviceWorker" in navigator) {
@@ -103,4 +117,3 @@
     </script>
 </body>
 </html>
-
