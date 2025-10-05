@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puja</title>
+		  <link rel="manifest" href="./manifest.json" />
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f0f0;
+            font-family: 'Inter', sans-serif;
+        }
+        #game-canvas {
+            display: block;
+        }
+        .ui-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none; 
+        }
+        #height-score {
+            position: absolute;
+            top: 30px;
+            width: 100%;
+            text-align: center;
+            font-size: 4rem;
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.8);
+            text-shadow: 0px 2px 6px rgba(0, 0, 0, 0.3);
+            pointer-events: none;
+        }
+        #precision-score {
+            position: absolute;
+            top: 100px;
+            width: 100%;
+            text-align: center;
+            font-size: 0.8em;
+            font-weight: 700;
+            text-shadow: 0px 1px 4px rgba(0, 0, 0, 0.2);
+            pointer-events: none;
+            transition: color 0.5s;
+        }
+        #instructions {
+             background-color: rgba(255, 255, 255, 0.8);
+            padding: 0.5rem 1rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            pointer-events: auto;
+            position: absolute;
+            bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Game Canvas -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- UI Elements -->
+    <div class="ui-container">
+        <div id="height-score">0</div>
+        <div id="precision-score">0</div>
+        <div id="instructions">Click to start and place the block</div>
+    </div>
+
+    <!-- Libraries -->
+    <script src="./libs/three.min.js"></script>
+    <script src="./libs/cannon.min.js"></script>
+
+    <script type="module" src="./js/main.js">
+        // --- Game Setup ---
+        
+    </script>
+		    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("./sw.js").then(
+            function (registration) {
+              console.log(
+                "ServiceWorker registration successful with scope: ",
+                registration.scope,
+              );
+            },
+            function (err) {
+              console.log("ServiceWorker registration failed: ", err);
+            },
+          );
+        });
+      } else {
+        console.info("Service workers not available on this device");
+      }
+    </script>
+</body>
+</html>
+
