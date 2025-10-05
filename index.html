@@ -63,7 +63,9 @@
             pointer-events: auto;
             position: absolute;
             bottom: 20px;
+						font-size: 1.0rem;
         }
+				#instructions .restart { font-size: 0.8rem; display: block; margin-top: 0.5rem;}
         #special-palette-toast {
             position: absolute;
             top: 7rem;
@@ -88,7 +90,7 @@
         <div id="height-score">0</div>
         <div id="precision-score">0</div>
         <div id="special-palette-toast" style="display: none;"></div>
-        <div id="instructions">Click to start and place the block</div>
+        <div id="instructions"><span class="restart">Click to start and place the block</span></div>
     </div>
 
     <script src="./libs/three.min.js"></script>

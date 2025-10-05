@@ -15,6 +15,24 @@ const precisionScoreElement = document.getElementById('precision-score');
 const instructionsElement = document.getElementById('instructions');
 const specialPaletteToastElement = document.getElementById('special-palette-toast');
 
+const nihilisticMessages = [
+    "Look on my Works, ye Mighty, and… despair?",
+    "You are the tower: transient and futile.",
+    "Each block, perfectly placed for nothing.",
+    "Your final block will fail. It is so.",
+    "Each perfect placement is a step towards the void.",
+    "This monument to vanity will crumble.",
+    "The abyss doesn't care about your score.",
+    "A perfect stack is just a prettier ruin.",
+    "You build, it falls. The universe is indifferent.",
+    "How many times will you keep trying this?",
+    "Every click echoes in an empty universe.",
+    "This tower is a monument to… What?",
+    "There is no prize at the top.",
+"Another brick on the wall of pointlessness.",
+    "Well done. You have achieved nothing of substance."
+];
+
 
 // --- Palettes ---
 const allPalettes = {
@@ -120,8 +138,10 @@ function resetGame() {
     camera.position.set(4, 4, 4);
     camera.lookAt(lookAtTarget);
     camera.updateProjectionMatrix();
-
+    
+    instructionsElement.innerHTML = `<span>Click to place blocks.</span>`;
     instructionsElement.style.display = 'block';
+
     heightScoreElement.innerText = 0;
     precisionScoreElement.innerText = "0";
     precisionScoreElement.style.color = `hsl(30, 90%, 60%)`;
@@ -157,15 +177,19 @@ function addLayer(x, z, width, depth, direction) {
     layer.direction = direction;
     stack.push(layer);
 
-    // The moving layer should be Kinematic, not Static
     if (direction !== 'foundation') {
         layer.cannonjs.type = CANNON.Body.KINEMATIC;
     }
 }
 
-function addOverhang(x, z, width, depth) {
+function addOverhang(x, z, width, depth, direction, overhangShift) {
     const y = (stack.length - 1) * 2;
     const overhang = generateBox(x, y, z, width, depth, true);
+
+    const mainAxis = direction === 'x' ? new CANNON.Vec3(0, 0, 1) : new CANNON.Vec3(1, 0, 0);
+    const impulse = Math.sign(overhangShift) * 0.5;
+    overhang.cannonjs.angularVelocity.set(mainAxis.x * impulse, mainAxis.y * impulse, mainAxis.z * impulse);
+    
     overhangs.push(overhang);
 }
 
@@ -197,7 +221,6 @@ function placeBlock() {
     const overlap = size - overhangSize;
 
     if (overlap > 0) {
-        // Convert the placed block from Kinematic to Static
         topLayer.cannonjs.type = CANNON.Body.STATIC;
 
         const precisionBonus = Math.floor(100 * (overlap / size));
@@ -229,7 +252,7 @@ function placeBlock() {
             const overhangShift = (overlap / 2 + overhangSize / 2) * Math.sign(delta);
             const overhangX = direction === 'x' ? topLayer.threejs.position.x + overhangShift : topLayer.threejs.position.x;
             const overhangZ = direction === 'z' ? topLayer.threejs.position.z + overhangShift : topLayer.threejs.position.z;
-            addOverhang(overhangX, overhangZ, overhangWidth, overhangDepth);
+            addOverhang(overhangX, overhangZ, overhangWidth, overhangDepth, direction, overhangShift);
         }
         return true;
     } else {
@@ -242,27 +265,27 @@ function endGame() {
     const topLayer = stack.pop();
     overhangs.push(topLayer);
     
-    // Convert the kinematic body to a dynamic body so it falls
     topLayer.cannonjs.type = CANNON.Body.DYNAMIC;
     topLayer.cannonjs.mass = 5;
     topLayer.cannonjs.updateMassProperties();
-    topLayer.cannonjs.wakeUp(); // Wake it up to make sure physics are applied
+    topLayer.cannonjs.wakeUp();
 
     gameState = 'zoomOut';
+    
+    const message = nihilisticMessages[Math.floor(Math.random() * nihilisticMessages.length)];
+    instructionsElement.innerHTML = `<span class="message">${message}</span><hr/><span class="restart">Click to restart.</span>`;
+    instructionsElement.style.display = 'block';
 }
 
 async function saveAsImage() {
     try {
-        // Create a temporary canvas to draw the scene and text
         const exportCanvas = document.createElement('canvas');
         exportCanvas.width = renderer.domElement.width;
         exportCanvas.height = renderer.domElement.height;
         const ctx = exportCanvas.getContext('2d');
         
-        // Draw the current rendered frame onto the canvas
         ctx.drawImage(renderer.domElement, 0, 0);
 
-        // Add the height score
         const height = stack.length;
         const scoreText = `${height.toLocaleString()}`;
         ctx.font = 'bold 48px monoidregular';
@@ -274,7 +297,7 @@ async function saveAsImage() {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         const textX = exportCanvas.width / 2;
-        const textY = exportCanvas.height - 50; // Position at the lower middle
+        const textY = exportCanvas.height - 50;
         ctx.fillText(scoreText, textX, textY);
 
         const blob = await new Promise(resolve => exportCanvas.toBlob(resolve, 'image/png'));
