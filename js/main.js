@@ -327,6 +327,9 @@ async function saveAsImage() {
 
 
 function addEventListeners() {
+    let pressTimer;
+    let isLongPress = false;
+
     window.addEventListener('resize', () => {
         const aspect = window.innerWidth / window.innerHeight;
         let width = 40;
@@ -343,7 +346,9 @@ function addEventListeners() {
     });
 
     renderer.domElement.addEventListener('pointerdown', () => {
+        isLongPress = false;
         pressTimer = window.setTimeout(function() {
+            isLongPress = true;
             saveAsImage();
         }, 1000);
     });
@@ -358,6 +363,9 @@ function addEventListeners() {
 
 
     renderer.domElement.addEventListener('click', () => {
+        if (isLongPress) {
+            return;
+        }
         triggerHaptic()
         if (gameState === 'awaitingReset') {
             resetGame();
