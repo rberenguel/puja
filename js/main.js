@@ -238,11 +238,30 @@ function endGame() {
     gameState = 'zoomOut';
 }
 
-function saveAsImage() {
-    const link = document.createElement('a');
-    link.download = 'puja-tower.png';
-    link.href = renderer.domElement.toDataURL('image/png');
-    link.click();
+async function saveAsImage() {
+    try {
+        const blob = await new Promise(resolve => renderer.domElement.toBlob(resolve, 'image/png'));
+        const file = new File([blob], `puja-${Date.now()}.png`, {
+            type: "image/png",
+        });
+
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+                files: [file],
+                title: 'Puja Tower',
+            });
+        } else {
+            const link = document.createElement("a");
+            link.download = file.name;
+            link.href = URL.createObjectURL(blob);
+            link.click();
+            URL.revokeObjectURL(link.href);
+        }
+    } catch (err) {
+        if (err.name !== "AbortError") {
+            console.error("Share/Download failed:", err);
+        }
+    }
 }
 
 
