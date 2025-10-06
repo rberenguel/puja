@@ -1,4 +1,4 @@
-# <img src="media/icon.png" alt="Puja Icon" width="32" height="32"> Puja - a stacking game
+# <img src="media/icon.PNG" alt="Puja Icon" width="32" height="32"> Puja - a stacking game
 
 Simple game similar to many others where you need to stack blocks up.
 
