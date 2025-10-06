@@ -1,12 +1,17 @@
-const CACHE_NAME = "puja-cache-v0.2.7";
+const CACHE_NAME = "puja-cache-v0.2.9";
 const urlsToCache = [
   "./",
   "./index.html",
+  "./css/style.css",
   "./libs/three.min.js",
   "./libs/cannon.min.js",
   "./libs/haptic.js",
   "./js/main.js",
+  "./js/config.js",
+  "./js/game.js",
+  "./js/ui.js",
   "./media/icon.PNG",
+  "./media/favicon.ico",
   "./fonts/InterDisplay-Bold.woff2",
   "./fonts/InterDisplay-Italic.woff2",
   "./fonts/InterDisplay-Regular.woff2",
