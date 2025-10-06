@@ -16,6 +16,7 @@ export const nihilisticMessages = [
   "There is no prize at the top.",
   "Another brick on the wall of pointlessness.",
   "Well done. You have achieved nothing of substance.",
+  "And so, Sisyphus pushes his block.",
 ];
 
 export const allPalettes = {
