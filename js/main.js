@@ -36,7 +36,7 @@ const nihilisticMessages = [
 // --- Palettes ---
 const allPalettes = {
     default: {
-        background: '#000000',
+        background: '#000015',
         colors: (layer) => `hsl(${30 + layer * 4}, 90%, 60%)`
     },
     halloween: {
