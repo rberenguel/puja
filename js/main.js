@@ -93,8 +93,9 @@ function init() {
     scene = new THREE.Scene();
 
     const aspect = window.innerWidth / window.innerHeight;
-    const width = 40;
-    const height = width / aspect;
+    const frustumSize = 40;
+    const width = aspect >= 1 ? frustumSize * aspect : frustumSize;
+    const height = aspect >= 1 ? frustumSize : frustumSize / aspect;
 
     camera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, -30, 100);
 
@@ -128,8 +129,9 @@ function resetGame() {
     document.body.style.backgroundColor = currentPalette.background;
 
     const aspect = window.innerWidth / window.innerHeight;
-    const width = 40;
-    const height = width / aspect;
+    const frustumSize = 40;
+    const width = aspect >= 1 ? frustumSize * aspect : frustumSize;
+    const height = aspect >= 1 ? frustumSize : frustumSize / aspect;
     camera.left = width / -2;
     camera.right = width / 2;
     camera.top = height / 2;
@@ -341,11 +343,13 @@ function addEventListeners() {
 
     window.addEventListener('resize', () => {
         const aspect = window.innerWidth / window.innerHeight;
-        let width = 40;
+        let frustumSize = 40;
         if (gameState !== 'playing') {
-            width = Math.max(40, stack.length * 3);
+            frustumSize = Math.max(40, stack.length * 3);
         }
-        const height = width / aspect;
+        const width = aspect >= 1 ? frustumSize * aspect : frustumSize;
+        const height = aspect >= 1 ? frustumSize : frustumSize / aspect;
+
         camera.left = width / -2;
         camera.right = width / 2;
         camera.top = height / 2;

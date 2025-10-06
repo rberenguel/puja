@@ -1,4 +1,4 @@
-const CACHE_NAME = "puja-cache-v0.2.6";
+const CACHE_NAME = "puja-cache-v0.2.7";
 const urlsToCache = [
   "./",
   "./index.html",

@@ -2,7 +2,7 @@
   "name": "Puja",
   "short_name": "Puja",
   "author": "Ruben Berenguel",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "Simple stacking game",
   "start_url": "./index.html",
   "display": "standalone",
