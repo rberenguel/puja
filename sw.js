@@ -3,9 +3,9 @@ const urlsToCache = [
   "./",
   "./index.html",
   "./libs/three.min.js",
-	"./libs/cannon.min.js",
-	"./libs/haptic.js",
-	"./js/main.js",
+  "./libs/cannon.min.js",
+  "./libs/haptic.js",
+  "./js/main.js",
   "./media/icon.PNG",
   "./fonts/InterDisplay-Bold.woff2",
   "./fonts/InterDisplay-Italic.woff2",
@@ -13,7 +13,7 @@ const urlsToCache = [
   "./fonts/inter.css",
   "./fonts/monoid-bold.woff2",
   "./fonts/monoid-regular.woff2",
-  "./fonts/monoid.css"
+  "./fonts/monoid.css",
 ];
 
 // Install event: opens a cache and adds the core files to it.
