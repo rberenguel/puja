@@ -267,12 +267,16 @@ function addEventListeners() {
     renderer.setSize(window.innerWidth, window.innerHeight);
   });
 
+  renderer.domElement.addEventListener("contextmenu", (e) =>
+    e.preventDefault(),
+  );
+
   renderer.domElement.addEventListener("pointerdown", () => {
     pressStartTime = Date.now();
     isLongPress = false;
   });
 
-  renderer.domElement.addEventListener("pointerleave", () => {
+  renderer.domElement.addEventListener("pointercancel", () => {
     pressStartTime = 0;
   });
 

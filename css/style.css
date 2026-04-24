@@ -1,3 +1,21 @@
+#update-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #e07020;
+  color: #fff;
+  text-align: center;
+  padding: 0.4rem;
+  font-size: 0.8rem;
+  z-index: 999;
+}
+
+#update-banner a {
+  color: #fff;
+  text-decoration: underline;
+}
+
 body {
   margin: 0;
   overflow: hidden;
@@ -9,6 +27,8 @@ body {
 }
 #game-canvas {
   display: block;
+  -webkit-touch-callout: none;
+  touch-action: none;
 }
 .ui-container {
   position: absolute;

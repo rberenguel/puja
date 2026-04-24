@@ -24,24 +24,26 @@ export const allPalettes = {
     background: "#000015",
     colors: (layer) => `hsl(${30 + layer * 4}, 90%, 60%)`,
   },
-  halloween: {
-    name: "Halloween!",
-    palette: {
-      background: "#775555",
-      colors: (layer) => {
-        const colors = ["#FF7F00", "#9932CC", "#000000", "#FDFD96"];
-        return colors[layer % colors.length];
-      },
-    },
-  },
-  christmas: {
-    name: "Christmas!",
-    palette: {
-      background: "#dcf0dc",
-      colors: (layer) => {
-        const colors = ["#D10000", "#008A00", "#FFFFFF", "#FFD700"];
-        return colors[layer % colors.length];
-      },
-    },
-  },
 };
+
+// --- Seasonal palettes (not currently active) ---
+// halloween: {
+//   name: "Halloween!",
+//   palette: {
+//     background: "#775555",
+//     colors: (layer) => {
+//       const colors = ["#FF7F00", "#9932CC", "#000000", "#FDFD96"];
+//       return colors[layer % colors.length];
+//     },
+//   },
+// },
+// christmas: {
+//   name: "Christmas!",
+//   palette: {
+//     background: "#dcf0dc",
+//     colors: (layer) => {
+//       const colors = ["#D10000", "#008A00", "#FFFFFF", "#FFD700"];
+//       return colors[layer % colors.length];
+//     },
+//   },
+// },

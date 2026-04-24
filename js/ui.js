@@ -51,6 +51,15 @@ function triggerDownload(file) {
   URL.revokeObjectURL(link.href);
 }
 
+function dataURLToBlob(dataURL) {
+  const [header, data] = dataURL.split(",");
+  const mime = header.match(/:(.*?);/)[1];
+  const binary = atob(data);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new Blob([bytes], { type: mime });
+}
+
 export async function saveAsImage(renderer, stack) {
   let file;
   try {
@@ -75,9 +84,9 @@ export async function saveAsImage(renderer, stack) {
     const textY = exportCanvas.height - 50;
     ctx.fillText(scoreText, textX, textY);
 
-    const blob = await new Promise((resolve) =>
-      exportCanvas.toBlob(resolve, "image/png"),
-    );
+    // Use synchronous dataURL→Blob conversion to keep the user-gesture
+    // activation alive for navigator.share on iOS Safari.
+    const blob = dataURLToBlob(exportCanvas.toDataURL("image/png"));
     file = new File([blob], `puja-tower-${Date.now()}.png`, {
       type: "image/png",
     });

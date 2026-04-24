@@ -11,6 +11,10 @@
     <link href="css/style.css" rel="stylesheet" />
   </head>
   <body>
+    <div id="update-banner" hidden>
+      Update available — <a href="#" id="update-link">reload</a>
+    </div>
+
     <canvas id="game-canvas"></canvas>
 
     <div class="ui-container">
@@ -30,21 +34,32 @@
     </script>
     <script>
       if ("serviceWorker" in navigator) {
-        window.addEventListener("load", function () {
-          navigator.serviceWorker.register("./sw.js").then(
-            function (registration) {
-              console.log(
-                "ServiceWorker registration successful with scope: ",
-                registration.scope,
-              );
-            },
-            function (err) {
-              console.log("ServiceWorker registration failed: ", err);
-            },
-          );
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("./sw.js")
+            .then((reg) => {
+              reg.addEventListener("updatefound", () => {
+                const w = reg.installing;
+                if (!w) return;
+                w.addEventListener("statechange", () => {
+                  if (
+                    w.state === "activated" &&
+                    navigator.serviceWorker.controller
+                  ) {
+                    document.getElementById("update-banner").hidden = false;
+                  }
+                });
+              });
+            })
+            .catch((err) => console.error("SW registration failed:", err));
         });
-      } else {
-        console.info("Service workers not available on this device");
+
+        document
+          .getElementById("update-link")
+          .addEventListener("click", (e) => {
+            e.preventDefault();
+            window.location.reload();
+          });
       }
     </script>
   </body>
