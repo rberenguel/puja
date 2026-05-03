@@ -13,6 +13,7 @@ import {
 } from "./ui.js";
 
 let scene, camera, renderer, world;
+let ambientLight, directionalLight;
 let stack = [];
 let overhangs = [];
 let perfectEffects = [];
@@ -22,8 +23,10 @@ let precisionScore = 0;
 let gameState = "loading"; // loading, playing, zoomOut, awaitingReset
 let speed = 0.15;
 let currentPalette;
+let towerPulseLife = 0;
+let lastFrameTime = 0;
 
-const activeSpecialPalettes = ["halloween"]; // Add 'christmas' here to enable it
+const activeSpecialPalettes = []; // Add 'halloween', 'christmas' here to enable them
 
 function choosePalette() {
   if (activeSpecialPalettes.length > 0 && Math.random() > 0.8) {
@@ -42,7 +45,7 @@ function choosePalette() {
 
 function generateBox(x, y, z, width, depth, falls, color) {
   const geometry = new THREE.BoxGeometry(width, 2, depth);
-  const material = new THREE.MeshLambertMaterial({ color });
+  const material = new THREE.MeshPhongMaterial({ color, emissive: 0x000000 });
   const mesh = new THREE.Mesh(geometry, material);
   mesh.position.set(x, y, z);
   scene.add(mesh);
@@ -54,19 +57,22 @@ function generateBox(x, y, z, width, depth, falls, color) {
   return { threejs: mesh, cannonjs: body, width, depth };
 }
 
-function triggerPerfectEffect(x, y, z, color) {
-  const geometry = new THREE.RingGeometry(0.5, 1, 32);
-  const material = new THREE.MeshBasicMaterial({
-    color,
-    transparent: true,
-    opacity: 1,
-    side: THREE.DoubleSide,
-  });
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.position.set(x, y, z);
-  mesh.rotation.x = -Math.PI / 2;
-  scene.add(mesh);
-  perfectEffects.push({ mesh, life: 1.0 });
+function addPerfectLine(layer) {
+  const lineHeight = 0.04;
+  const geometry = new THREE.BoxGeometry(
+    layer.width + 0.06,
+    lineHeight,
+    layer.depth + 0.06,
+  );
+  const material = new THREE.MeshLambertMaterial({ color: 0x111111 });
+  const line = new THREE.Mesh(geometry, material);
+  line.position.copy(layer.threejs.position);
+  scene.add(line);
+  layer.perfectLine = line;
+}
+
+function triggerTowerPulse() {
+  towerPulseLife = 1.0;
 }
 
 function addLayer(x, z, width, depth, direction) {
@@ -165,13 +171,8 @@ function placeBlock() {
     const PERFECT_THRESHOLD = 0.1;
     if (overhangSize < PERFECT_THRESHOLD) {
       precisionScore += 200;
-      const topY = topLayer.threejs.position.y + 1.01;
-      triggerPerfectEffect(
-        topLayer.threejs.position.x,
-        topY,
-        topLayer.threejs.position.z,
-        topLayer.threejs.material.color,
-      );
+      triggerTowerPulse();
+      addPerfectLine(topLayer);
     }
 
     if (overhangSize > 0) {
@@ -208,6 +209,7 @@ function resetGame() {
   gameState = "playing";
   speed = 0.15;
   animationTime = 0;
+  lastFrameTime = 0;
   lookAtTarget.set(0, 0, 0);
   precisionScore = 0;
 
@@ -234,13 +236,18 @@ function resetGame() {
 
   [...stack, ...overhangs].forEach((element) => {
     scene.remove(element.threejs);
+    if (element.perfectLine) scene.remove(element.perfectLine);
     if (element.cannonjs) world.remove(element.cannonjs);
   });
-  stack = [];
-  overhangs = [];
 
   perfectEffects.forEach((effect) => scene.remove(effect.mesh));
   perfectEffects = [];
+  towerPulseLife = 0;
+  if (ambientLight) ambientLight.intensity = 0.6;
+  if (directionalLight) directionalLight.intensity = 0.6;
+
+  stack = [];
+  overhangs = [];
 
   addLayer(0, 0, 10, 10, "foundation");
   addLayer(-15, 0, 10, 10, "x");
@@ -326,13 +333,19 @@ function addEventListeners() {
   });
 }
 
-function animation() {
+function animation(time) {
   if (stack.length === 0) return;
+
+  if (lastFrameTime === 0) lastFrameTime = time;
+  const deltaTime = Math.min((time - lastFrameTime) / 1000, 0.1);
+  lastFrameTime = time;
+  const dt60 = deltaTime * 60;
+
   const topLayer = stack[stack.length - 1];
 
   if (gameState === "playing" && topLayer.direction !== "foundation") {
-    topLayer.threejs.position[topLayer.direction] += speed;
-    topLayer.cannonjs.position[topLayer.direction] += speed;
+    topLayer.threejs.position[topLayer.direction] += speed * dt60;
+    topLayer.cannonjs.position[topLayer.direction] += speed * dt60;
 
     if (Math.abs(topLayer.threejs.position[topLayer.direction]) > 15) {
       speed *= -1;
@@ -345,17 +358,17 @@ function animation() {
   }
 
   if (gameState === "playing") {
-    animationTime += 0.01;
+    animationTime += 0.01 * dt60;
     const sway = Math.sin(animationTime) * 2;
 
     camera.position.x = 4 + sway;
     camera.position.z = 4 - sway;
 
     const targetCameraY = (stack.length - 1) * 2 + 4;
-    camera.position.y += (targetCameraY - camera.position.y) * 0.05;
+    camera.position.y += (targetCameraY - camera.position.y) * 0.05 * dt60;
 
     const targetLookAtY = (stack.length - 1) * 2;
-    lookAtTarget.y += (targetLookAtY - lookAtTarget.y) * 0.05;
+    lookAtTarget.y += (targetLookAtY - lookAtTarget.y) * 0.05 * dt60;
     camera.lookAt(lookAtTarget);
   } else if (gameState === "zoomOut") {
     const towerHeight = stack.length * 2;
@@ -367,13 +380,13 @@ function animation() {
     const targetCameraY = towerHeight / 2;
     const targetLookAtY = towerHeight / 2;
 
-    camera.position.y += (targetCameraY + 4 - camera.position.y) * 0.05;
-    lookAtTarget.y += (targetLookAtY - lookAtTarget.y) * 0.05;
+    camera.position.y += (targetCameraY + 4 - camera.position.y) * 0.05 * dt60;
+    lookAtTarget.y += (targetLookAtY - lookAtTarget.y) * 0.05 * dt60;
 
-    camera.left += (targetWidth / -2 - camera.left) * 0.05;
-    camera.right += (targetWidth / 2 - camera.right) * 0.05;
-    camera.top += (targetHeight / 2 - camera.top) * 0.05;
-    camera.bottom += (targetHeight / -2 - camera.bottom) * 0.05;
+    camera.left += (targetWidth / -2 - camera.left) * 0.05 * dt60;
+    camera.right += (targetWidth / 2 - camera.right) * 0.05 * dt60;
+    camera.top += (targetHeight / 2 - camera.top) * 0.05 * dt60;
+    camera.bottom += (targetHeight / -2 - camera.bottom) * 0.05 * dt60;
     camera.updateProjectionMatrix();
     camera.lookAt(lookAtTarget);
 
@@ -382,9 +395,26 @@ function animation() {
     }
   }
 
+  if (towerPulseLife > 0) {
+    towerPulseLife -= 0.04 * dt60;
+    const progress = 1 - towerPulseLife;
+    const intensity = Math.pow(Math.sin(progress * Math.PI), 2);
+    for (let i = 0; i < stack.length - 1; i++) {
+      const block = stack[i];
+      block.threejs.material.emissive
+        .copy(block.threejs.material.color)
+        .multiplyScalar(intensity * 0.8);
+    }
+    if (towerPulseLife <= 0) {
+      for (let i = 0; i < stack.length; i++) {
+        stack[i].threejs.material.emissive.setHex(0x000000);
+      }
+    }
+  }
+
   for (let i = perfectEffects.length - 1; i >= 0; i--) {
     const effect = perfectEffects[i];
-    effect.life -= 0.03;
+    effect.life -= 0.025 * dt60;
 
     if (effect.life <= 0) {
       scene.remove(effect.mesh);
@@ -396,7 +426,7 @@ function animation() {
     }
   }
 
-  world.step(1 / 60);
+  world.step(1 / 60, deltaTime, 3);
   overhangs.forEach((element) => {
     element.threejs.position.copy(element.cannonjs.position);
     element.threejs.quaternion.copy(element.cannonjs.quaternion);
@@ -436,9 +466,9 @@ export function init() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setAnimationLoop(animation);
 
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+  ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
   scene.add(ambientLight);
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
+  directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
   directionalLight.position.set(10, 20, 0);
   scene.add(directionalLight);
 

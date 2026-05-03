@@ -16,6 +16,10 @@
   text-decoration: underline;
 }
 
+html, body {
+  background-color: #000015;
+}
+
 body {
   margin: 0;
   overflow: hidden;
