@@ -58,7 +58,7 @@ function generateBox(x, y, z, width, depth, falls, color) {
 }
 
 function addPerfectLine(layer) {
-  const lineHeight = 0.04;
+  const lineHeight = 0.08;
   const geometry = new THREE.BoxGeometry(
     layer.width + 0.06,
     lineHeight,
