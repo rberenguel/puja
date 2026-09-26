@@ -8,6 +8,7 @@
     <link rel="icon" href="./media/favicon.ico" type="image/x-icon" />
     <link href="fonts/inter.css" rel="stylesheet" />
     <link href="fonts/monoid.css" rel="stylesheet" />
+    <link href="fonts/phosphor.css" rel="stylesheet" />
     <link href="css/style.css" rel="stylesheet" />
   </head>
   <body>
@@ -16,6 +17,12 @@
     </div>
 
     <canvas id="game-canvas"></canvas>
+
+    <button
+      id="mute-toggle"
+      aria-label="Toggle sound"
+      class="ph-light ph-speaker-high"
+    ></button>
 
     <div class="ui-container">
       <div id="height-score">0</div>
@@ -28,6 +35,7 @@
 
     <script src="./libs/three.min.js"></script>
     <script src="./libs/cannon.min.js"></script>
+    <script src="./audio/Tone.js"></script>
 
     <script type="module" src="./js/main.js">
       // --- Game Setup ---

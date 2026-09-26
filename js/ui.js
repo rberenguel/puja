@@ -1,9 +1,40 @@
+import {
+  setSoundEnabled,
+  isSoundEnabled,
+  loadSoundPreference,
+  setSound,
+} from "./sound.js";
+
 export const heightScoreElement = document.getElementById("height-score");
 export const precisionScoreElement = document.getElementById("precision-score");
 export const instructionsElement = document.getElementById("instructions");
 export const specialPaletteToastElement = document.getElementById(
   "special-palette-toast",
 );
+export const muteToggleElement = document.getElementById("mute-toggle");
+
+function renderMuteIcon() {
+  if (!muteToggleElement) return;
+  muteToggleElement.classList.remove("ph-speaker-high", "ph-speaker-slash");
+  muteToggleElement.classList.add(
+    isSoundEnabled() ? "ph-speaker-high" : "ph-speaker-slash",
+  );
+}
+
+export function initMuteToggle() {
+  if (!muteToggleElement) return;
+  loadSoundPreference();
+  renderMuteIcon();
+  muteToggleElement.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const next = !isSoundEnabled();
+    setSoundEnabled(next);
+    renderMuteIcon();
+    if (next) setSound();
+  });
+  muteToggleElement.addEventListener("pointerdown", (e) => e.stopPropagation());
+  muteToggleElement.addEventListener("pointerup", (e) => e.stopPropagation());
+}
 
 export function updateHeightScore(score) {
   heightScoreElement.innerText = score.toLocaleString();

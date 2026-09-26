@@ -99,3 +99,27 @@ body {
 #special-palette-toast.fade-out {
   opacity: 0;
 }
+#mute-toggle {
+  position: fixed;
+  top: max(0.75rem, env(safe-area-inset-top));
+  right: max(0.75rem, env(safe-area-inset-right));
+  z-index: 10;
+  width: 2.25rem;
+  height: 2.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0;
+  font-size: 1.3rem;
+  cursor: pointer;
+  line-height: 1;
+  -webkit-appearance: none;
+  appearance: none;
+}
+#mute-toggle:hover {
+  background: rgba(0, 0, 0, 0.55);
+}

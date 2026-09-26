@@ -9,8 +9,24 @@ import {
   showSpecialPaletteToast,
   hideSpecialPaletteToast,
   saveAsImage,
+  initMuteToggle,
   precisionScoreElement,
 } from "./ui.js";
+import {
+  setSound,
+  onPlace,
+  onPerfect,
+  onPulse,
+  onTurnaround,
+  onDirectionSwap,
+  onEnd,
+  onReset,
+} from "./sound.js";
+import {
+  attachVersionText,
+  updateVersionText,
+  disposeVersionText,
+} from "./versionText.js";
 
 let scene, camera, renderer, world;
 let ambientLight, directionalLight;
@@ -28,48 +44,6 @@ let lastFrameTime = 0;
 let appVersion = "";
 
 const activeSpecialPalettes = []; // Add 'halloween', 'christmas' here to enable them
-
-function addVersionText(layer) {
-  const W = 512, H = 100;
-  const colorHex = `#${layer.threejs.material.color.getHexString()}`;
-
-  function makeCanvas(text, xRatio, yRatio, fontSize) {
-    const canvas = document.createElement("canvas");
-    canvas.width = W; canvas.height = H;
-    return { canvas, draw(alpha) {
-      const ctx = canvas.getContext("2d");
-      ctx.clearRect(0, 0, W, H);
-      ctx.fillStyle = colorHex;
-      ctx.fillRect(0, 0, W, H);
-      ctx.globalAlpha = alpha;
-      ctx.fillStyle = "#000000";
-      ctx.font = `${fontSize}px monoidregular`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(text, W * xRatio, H * yRatio);
-      ctx.globalAlpha = 1.0;
-    }};
-  }
-
-  const ver = makeCanvas(appVersion, 0.5, 0.6, "35");
-  const name = makeCanvas("puja", 0.49, 0.55, "65");
-  ver.draw(1.0);
-  name.draw(1.0);
-
-  const verTex = new THREE.CanvasTexture(ver.canvas);
-  const nameTex = new THREE.CanvasTexture(name.canvas);
-  const verMat = new THREE.MeshPhongMaterial({ map: verTex });
-  const nameMat = new THREE.MeshPhongMaterial({ map: nameTex });
-  const baseMat = layer.threejs.material;
-
-  layer.threejs.material = [nameMat, baseMat, baseMat, baseMat, verMat, baseMat];
-  layer.versionText = {
-    mats: [verMat, nameMat],
-    textures: [verTex, nameTex],
-    draws: [ver.draw, name.draw],
-    life: 1.0,
-  };
-}
 
 function choosePalette() {
   if (activeSpecialPalettes.length > 0 && Math.random() > 0.8) {
@@ -116,6 +90,7 @@ function addPerfectLine(layer) {
 
 function triggerTowerPulse() {
   towerPulseLife = 1.0;
+  onPulse();
 }
 
 function addLayer(x, z, width, depth, direction) {
@@ -174,6 +149,7 @@ function endGame() {
   const message =
     nihilisticMessages[Math.floor(Math.random() * nihilisticMessages.length)];
   showEndGameMessage(message);
+  onEnd();
 }
 
 function placeBlock() {
@@ -195,6 +171,7 @@ function placeBlock() {
 
     const precisionBonus = Math.floor(100 * (overlap / size));
     precisionScore += precisionBonus;
+    onPlace(stack.length, overlap / size);
 
     const newWidth = direction === "x" ? overlap : topLayer.width;
     const newDepth = direction === "z" ? overlap : topLayer.depth;
@@ -216,6 +193,7 @@ function placeBlock() {
       precisionScore += 200;
       triggerTowerPulse();
       addPerfectLine(topLayer);
+      onPerfect();
     }
 
     if (overhangSize > 0) {
@@ -281,9 +259,7 @@ function resetGame() {
     scene.remove(element.threejs);
     if (element.perfectLine) scene.remove(element.perfectLine);
     if (element.cannonjs) world.remove(element.cannonjs);
-    if (element.versionText) {
-      element.versionText.mats.forEach(m => { m.map.dispose(); m.dispose(); });
-    }
+    disposeVersionText(element);
   });
 
   perfectEffects.forEach((effect) => scene.remove(effect.mesh));
@@ -296,8 +272,9 @@ function resetGame() {
   overhangs = [];
 
   addLayer(0, 0, 10, 10, "foundation");
-  addVersionText(stack[0]);
+  attachVersionText(stack[0], appVersion);
   addLayer(-15, 0, 10, 10, "x");
+  onReset();
 }
 
 function addEventListeners() {
@@ -351,6 +328,7 @@ function addEventListeners() {
     }
 
     triggerHaptic();
+    setSound();
     if (gameState === "awaitingReset") {
       resetGame();
       return;
@@ -375,6 +353,7 @@ function addEventListeners() {
           topLayer.depth,
           nextDirection,
         );
+        onDirectionSwap();
       }
     }
   });
@@ -395,8 +374,12 @@ function animation(time) {
     topLayer.threejs.position[topLayer.direction] += (speed / viewScale) * dt60;
     topLayer.cannonjs.position[topLayer.direction] += (speed / viewScale) * dt60;
 
-    if (Math.abs(topLayer.threejs.position[topLayer.direction]) > 15) {
+    const pos = topLayer.threejs.position[topLayer.direction];
+
+    if (Math.abs(pos) > 15) {
+      const prevSign = Math.sign(speed);
       speed *= -1;
+      if (Math.sign(speed) !== prevSign) onTurnaround();
     }
   }
 
@@ -443,19 +426,7 @@ function animation(time) {
     }
   }
 
-  const foundation = stack[0];
-  if (foundation && foundation.versionText) {
-    const vt = foundation.versionText;
-    vt.life -= deltaTime / 3;
-    if (vt.life <= 0) {
-      const baseMat = foundation.threejs.material[1];
-      vt.mats.forEach(m => { m.map.dispose(); m.dispose(); });
-      foundation.threejs.material = baseMat;
-      foundation.versionText = null;
-    } else {
-      vt.draws.forEach((draw, i) => { draw(vt.life); vt.textures[i].needsUpdate = true; });
-    }
-  }
+  updateVersionText(stack[0], deltaTime);
 
   if (towerPulseLife > 0) {
     towerPulseLife -= 0.04 * dt60;
@@ -537,5 +508,6 @@ export async function init() {
   scene.add(directionalLight);
 
   addEventListeners();
+  initMuteToggle();
   resetGame();
 }
