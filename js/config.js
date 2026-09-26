@@ -1,6 +1,9 @@
 export const nihilisticMessages = [
   "Don't wish it were easier, wish you were better",
-  "Don't wish it were easier, wish you were better",
+  "Don't wish it were easier, wish you were better", // intentional duplicate for higher probability
+
+  "Ever tried. Ever failed. No matter. Try again. Fail again. Fail better.",
+  "There is infinite hope, but not for us.",
   "Look on my Works, ye Mighty, and… despair?",
   "You are the tower: transient and futile.",
   "Each block, perfectly placed for nothing.",
