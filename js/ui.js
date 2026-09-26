@@ -43,89 +43,47 @@ export function hideSpecialPaletteToast() {
   specialPaletteToastElement.style.display = "none";
 }
 
-function triggerDownload(file) {
-  const link = document.createElement("a");
-  link.download = file.name;
-  link.href = URL.createObjectURL(file);
-  link.click();
-  URL.revokeObjectURL(link.href);
-}
+export function saveAsImage(renderer, scene, camera, stack) {
+  const towerHeight = stack.length * 2;
+  const aspect = window.innerWidth / window.innerHeight;
+  const capHeight = Math.max(40, towerHeight * 1.3);
+  const capWidth = capHeight * aspect;
 
-function dataURLToBlob(dataURL) {
-  const [header, data] = dataURL.split(",");
-  const mime = header.match(/:(.*?);/)[1];
-  const binary = atob(data);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return new Blob([bytes], { type: mime });
-}
+  const saved = { left: camera.left, right: camera.right, top: camera.top, bottom: camera.bottom };
+  camera.left = capWidth / -2;
+  camera.right = capWidth / 2;
+  camera.top = capHeight / 2;
+  camera.bottom = capHeight / -2;
+  camera.updateProjectionMatrix();
+  renderer.render(scene, camera);
 
-export async function saveAsImage(renderer, scene, camera, stack) {
-  let file;
-  try {
-    const towerHeight = stack.length * 2;
-    const aspect = window.innerWidth / window.innerHeight;
-    const zoomFactor = aspect > 1 ? 1.5 : 1.0;
-    const capWidth = Math.max(30, towerHeight * zoomFactor);
-    const capHeight = capWidth / aspect;
+  const exportCanvas = document.createElement("canvas");
+  exportCanvas.width = renderer.domElement.width;
+  exportCanvas.height = renderer.domElement.height;
+  const ctx = exportCanvas.getContext("2d");
+  ctx.drawImage(renderer.domElement, 0, 0);
 
-    const saved = { left: camera.left, right: camera.right, top: camera.top, bottom: camera.bottom };
-    camera.left = capWidth / -2;
-    camera.right = capWidth / 2;
-    camera.top = capHeight / 2;
-    camera.bottom = capHeight / -2;
-    camera.updateProjectionMatrix();
-    renderer.render(scene, camera);
+  Object.assign(camera, saved);
+  camera.updateProjectionMatrix();
 
-    const exportCanvas = document.createElement("canvas");
-    exportCanvas.width = renderer.domElement.width;
-    exportCanvas.height = renderer.domElement.height;
-    const ctx = exportCanvas.getContext("2d");
+  ctx.font = "bold 48px monoidregular";
+  ctx.fillStyle = "#FFFFFF";
+  ctx.shadowColor = "rgba(0, 0, 0, 0.7)";
+  ctx.shadowBlur = 5;
+  ctx.shadowOffsetX = 2;
+  ctx.shadowOffsetY = 2;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(`${stack.length.toLocaleString()}`, exportCanvas.width / 2, exportCanvas.height - 50);
 
-    ctx.drawImage(renderer.domElement, 0, 0);
-
-    Object.assign(camera, saved);
-    camera.updateProjectionMatrix();
-
-    const height = stack.length;
-    const scoreText = `${height.toLocaleString()}`;
-    ctx.font = "bold 48px monoidregular";
-    ctx.fillStyle = "#FFFFFF";
-    ctx.shadowColor = "rgba(0, 0, 0, 0.7)";
-    ctx.shadowBlur = 5;
-    ctx.shadowOffsetX = 2;
-    ctx.shadowOffsetY = 2;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    const textX = exportCanvas.width / 2;
-    const textY = exportCanvas.height - 50;
-    ctx.fillText(scoreText, textX, textY);
-
-    // Use synchronous dataURL→Blob conversion to keep the user-gesture
-    // activation alive for navigator.share on iOS Safari.
-    const blob = dataURLToBlob(exportCanvas.toDataURL("image/png"));
-    file = new File([blob], `puja-tower-${Date.now()}.png`, {
-      type: "image/png",
-    });
-
-    if (
-      navigator.share &&
-      navigator.canShare &&
-      navigator.canShare({ files: [file] })
-    ) {
-      await navigator.share({
-        files: [file],
-        title: "Puja Tower",
-      });
-    } else {
-      triggerDownload(file);
+  exportCanvas.toBlob(async (blob) => {
+    const file = new File([blob], `puja-tower-${Date.now()}.png`, { type: "image/png" });
+    if (navigator.share && navigator.canShare?.({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: "Puja Tower" }); return; } catch {}
     }
-  } catch (err) {
-    if (err.name !== "AbortError") {
-      console.error("Share API failed, attempting download fallback:", err);
-      if (file) {
-        triggerDownload(file);
-      }
-    }
-  }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = file.name; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
 }

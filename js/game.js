@@ -25,8 +25,51 @@ let speed = 0.15;
 let currentPalette;
 let towerPulseLife = 0;
 let lastFrameTime = 0;
+let appVersion = "";
 
 const activeSpecialPalettes = []; // Add 'halloween', 'christmas' here to enable them
+
+function addVersionText(layer) {
+  const W = 512, H = 100;
+  const colorHex = `#${layer.threejs.material.color.getHexString()}`;
+
+  function makeCanvas(text, xRatio, yRatio, fontSize) {
+    const canvas = document.createElement("canvas");
+    canvas.width = W; canvas.height = H;
+    return { canvas, draw(alpha) {
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = colorHex;
+      ctx.fillRect(0, 0, W, H);
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = "#000000";
+      ctx.font = `${fontSize}px monoidregular`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(text, W * xRatio, H * yRatio);
+      ctx.globalAlpha = 1.0;
+    }};
+  }
+
+  const ver = makeCanvas(appVersion, 0.5, 0.6, "35");
+  const name = makeCanvas("puja", 0.49, 0.55, "65");
+  ver.draw(1.0);
+  name.draw(1.0);
+
+  const verTex = new THREE.CanvasTexture(ver.canvas);
+  const nameTex = new THREE.CanvasTexture(name.canvas);
+  const verMat = new THREE.MeshPhongMaterial({ map: verTex });
+  const nameMat = new THREE.MeshPhongMaterial({ map: nameTex });
+  const baseMat = layer.threejs.material;
+
+  layer.threejs.material = [nameMat, baseMat, baseMat, baseMat, verMat, baseMat];
+  layer.versionText = {
+    mats: [verMat, nameMat],
+    textures: [verTex, nameTex],
+    draws: [ver.draw, name.draw],
+    life: 1.0,
+  };
+}
 
 function choosePalette() {
   if (activeSpecialPalettes.length > 0 && Math.random() > 0.8) {
@@ -238,6 +281,9 @@ function resetGame() {
     scene.remove(element.threejs);
     if (element.perfectLine) scene.remove(element.perfectLine);
     if (element.cannonjs) world.remove(element.cannonjs);
+    if (element.versionText) {
+      element.versionText.mats.forEach(m => { m.map.dispose(); m.dispose(); });
+    }
   });
 
   perfectEffects.forEach((effect) => scene.remove(effect.mesh));
@@ -250,6 +296,7 @@ function resetGame() {
   overhangs = [];
 
   addLayer(0, 0, 10, 10, "foundation");
+  addVersionText(stack[0]);
   addLayer(-15, 0, 10, 10, "x");
 }
 
@@ -344,8 +391,9 @@ function animation(time) {
   const topLayer = stack[stack.length - 1];
 
   if (gameState === "playing" && topLayer.direction !== "foundation") {
-    topLayer.threejs.position[topLayer.direction] += speed * dt60;
-    topLayer.cannonjs.position[topLayer.direction] += speed * dt60;
+    const viewScale = (camera.right - camera.left) / 40;
+    topLayer.threejs.position[topLayer.direction] += (speed / viewScale) * dt60;
+    topLayer.cannonjs.position[topLayer.direction] += (speed / viewScale) * dt60;
 
     if (Math.abs(topLayer.threejs.position[topLayer.direction]) > 15) {
       speed *= -1;
@@ -395,6 +443,20 @@ function animation(time) {
     }
   }
 
+  const foundation = stack[0];
+  if (foundation && foundation.versionText) {
+    const vt = foundation.versionText;
+    vt.life -= deltaTime / 3;
+    if (vt.life <= 0) {
+      const baseMat = foundation.threejs.material[1];
+      vt.mats.forEach(m => { m.map.dispose(); m.dispose(); });
+      foundation.threejs.material = baseMat;
+      foundation.versionText = null;
+    } else {
+      vt.draws.forEach((draw, i) => { draw(vt.life); vt.textures[i].needsUpdate = true; });
+    }
+  }
+
   if (towerPulseLife > 0) {
     towerPulseLife -= 0.04 * dt60;
     const progress = 1 - towerPulseLife;
@@ -435,7 +497,8 @@ function animation(time) {
   renderer.render(scene, camera);
 }
 
-export function init() {
+export async function init() {
+  appVersion = await fetch("./manifest.json").then(r => r.json()).then(m => m.version);
   initHaptic();
   world = new CANNON.World();
   world.gravity.set(0, -10, 0);
