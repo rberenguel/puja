@@ -60,15 +60,32 @@ function dataURLToBlob(dataURL) {
   return new Blob([bytes], { type: mime });
 }
 
-export async function saveAsImage(renderer, stack) {
+export async function saveAsImage(renderer, scene, camera, stack) {
   let file;
   try {
+    const towerHeight = stack.length * 2;
+    const aspect = window.innerWidth / window.innerHeight;
+    const zoomFactor = aspect > 1 ? 1.5 : 1.0;
+    const capWidth = Math.max(30, towerHeight * zoomFactor);
+    const capHeight = capWidth / aspect;
+
+    const saved = { left: camera.left, right: camera.right, top: camera.top, bottom: camera.bottom };
+    camera.left = capWidth / -2;
+    camera.right = capWidth / 2;
+    camera.top = capHeight / 2;
+    camera.bottom = capHeight / -2;
+    camera.updateProjectionMatrix();
+    renderer.render(scene, camera);
+
     const exportCanvas = document.createElement("canvas");
     exportCanvas.width = renderer.domElement.width;
     exportCanvas.height = renderer.domElement.height;
     const ctx = exportCanvas.getContext("2d");
 
     ctx.drawImage(renderer.domElement, 0, 0);
+
+    Object.assign(camera, saved);
+    camera.updateProjectionMatrix();
 
     const height = stack.length;
     const scoreText = `${height.toLocaleString()}`;
@@ -91,10 +108,7 @@ export async function saveAsImage(renderer, stack) {
       type: "image/png",
     });
 
-    const isMobile = "ontouchstart" in window || navigator.maxTouchPoints > 0;
-
     if (
-      isMobile &&
       navigator.share &&
       navigator.canShare &&
       navigator.canShare({ files: [file] })

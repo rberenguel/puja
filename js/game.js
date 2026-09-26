@@ -293,7 +293,7 @@ function addEventListeners() {
     const pressDuration = Date.now() - pressStartTime;
     if (pressDuration >= 1000) {
       isLongPress = true;
-      saveAsImage(renderer, stack);
+      saveAsImage(renderer, scene, camera, stack);
     }
     pressStartTime = 0;
   });
@@ -463,6 +463,7 @@ export function init() {
     canvas: document.getElementById("game-canvas"),
     preserveDrawingBuffer: true,
   });
+  renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setAnimationLoop(animation);
 
