@@ -8,6 +8,8 @@ But no ads, no weird tracking, nothing asked, just have fun.
 
 Made with Gemini (and Working Copy, Textastic, the online version of ImageMagick and copying pieces from my other PWAs) with just my iPhone, because I was bored in the train from Zurich to Konstanz (and back).
 
+Further refinements applied with Kimi, Claude.
+
 ## Credits
 
 The generative soundtrack samples and library were lifted from my earlier game
